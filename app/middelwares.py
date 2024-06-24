@@ -1,7 +1,7 @@
 from aiogram import BaseMiddleware
 from aiogram import types
 from typing import Callable, Dict, Any, Awaitable,Union
-from config import  today
+from config import  today, USERS
 from loader import bot,rq
 from icecream import ic
 from aiogram.utils.deep_linking import decode_payload
@@ -15,7 +15,8 @@ class CheckerSubscriptionsOnChannel(BaseMiddleware):
         event: types.TelegramObject,
         data: Dict[str, Any]
                                         ) -> Any:
-            return await handler(event,data)
+            if str(event.from_user.id) in USERS:
+                return await handler(event,data)
 
 
 class CheckerOnCallbackData(BaseMiddleware):

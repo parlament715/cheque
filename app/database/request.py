@@ -1,6 +1,6 @@
 import sqlite3
 from icecream import ic
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, List, Any
 
 
 
@@ -11,81 +11,102 @@ class Request():
 
         cursor = conn.cursor()
 
-        cursor.execute(f'''CREATE TABLE IF NOT EXISTS "users"
-                        (id_telegram INTEGER PRIMARY KEY NOT NULL,
-                        user_name_telegram TEXT,
-                        is_subscribed BOOLEAN,
-                        balance INTEGER,
-                        wallet TEXT,
-                        datetime_registration TEXT
+        cursor.execute(f'''CREATE TABLE IF NOT EXISTS "cards"
+                        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id_telegram INTEGER NOT NULL,
+                        user_name_telegram TEXT NOT NULL,
+                        company_name TEXT NOT NULL,
+                        date_time TEXT NOT NULL,
+                        address TEXT NOT NULL,
+                        cheque_number INTEGER NOT NULL,
+                        FD INTEGER NOT NULL,
+                        shift_number INTEGER NOT NULL,
+                        Comment TEXT 
                         )
                         ''')
-        cursor.execute(f'''CREATE TABLE IF NOT EXISTS "refers" 
-                        (id INTEGER,
-                        id_refers INTEGER PRIMARY KEY NOT NULL
-                        )
-        ''')
-        self.conn = conn
-        self.cursor = cursor
+        conn.close()
 
-    def con_close(self):
-        self.conn.close()
+    def __enter__(self):
+        self.conn = sqlite3.connect('request.db')
+        self.cursor = self.conn.cursor()
+        return self.cursor
     
-    def select_one(self, table : str, column :str, where : str = None) -> Tuple:
+    def __exit__(self,exc_type,exc_val,exc_tb):
+        self.conn.close()
+
+    def select_one(self, table : str, columns : List[str], where : str = None) -> Tuple:
+        if len(columns) == 1 and columns[0].startswith("@"):
+            str_columns = columns[0].replace("@","") ### чтобы * не оборачивалась в кавычки "*"
+        else:
+            str_columns = ''
+            for column in columns:
+                str_columns += '"' + column + '" ,'
+            str_columns = str_columns[:-2]
         if where != None:
-            res = self.cursor.execute(
+            request = (
                 f'''
-                SELECT "{column}" FROM "{table}" WHERE {where}
+                SELECT {str_columns} FROM "{table}" WHERE {where}
                 '''
-            ).fetchone()
+            )
         
         else:
-            res = self.cursor.execute(
+            request = (
                     f'''
-                    SELECT "{column}" FROM "{table}"
+                    SELECT {str_columns} FROM "{table}"
                     '''
-                ).fetchone()
-        
+                )
+        res = self.cursor.execute(request).fetchone()
         return res
 
-    def select_many(self,table : str,column :str,where : str = None) -> Tuple:
+    def select_many(self,table : str,columns : List[str],where : str = None) -> Tuple:
+        if len(columns) == 1 and columns[0].startswith("@"):
+            str_columns = columns[0].replace("@","") ### чтобы * не оборачивалась в кавычки "*"
+        else:
+            str_columns = ''
+            for column in columns:
+                str_columns += column + ', '
+            str_columns = str_columns[:-2]
         if where != None:
-            res = self.cursor.execute(
+            request = (
                 f'''
-                SELECT "{column}" FROM "{table}" WHERE {where}
+                SELECT {str_columns} FROM "{table}" WHERE {where}
                 '''
-            ).fetchall()
+            )
         
-        res = self.cursor.execute(
-                f'''
-                SELECT "{column}" FROM "{table}"
-                '''
-            ).fetchall()
+        else:
+            request = (
+                    f'''
+                    SELECT {str_columns} FROM "{table}"
+                    '''
+                )
+        res = self.cursor.execute(request).fetchall()
         return res
 
-    def write_insert(self,table_name : str,columns_and_values : list) -> None:
+    def write_insert(self,table_name : str, columns_and_values : List[Tuple[str,Any]]) -> None:
         columns = ""
         values = ""
         for column,value in columns_and_values:
             column,value = str(column),str(value)
             columns += column + ", "
+            if type(value) == str:
+                value = '"' + value + '"'
             values += value + ", "
         self.cursor.execute(f'''INSERT INTO {table_name} ({columns[:-2]}) VALUES ({values[:-2]})''')
         self.conn.commit()
         
-    def write_update(self,table_name : str,columns_and_values : list, where : str = None) -> None:
+    def write_update(self,table_name : str, columns_and_values : List[Tuple[str,Any]], where : str = None) -> None:
         columns = ""
         values = ""
         for column,value in columns_and_values:
             column,value =str(column),str(value)
-            columns += column + ","
-            values += value + ","
+            columns += column + ", "
+            if type(value) == str:
+                value = '"' + value + '"'
+            values += value + ", "
         if where == None:
-            self.cursor.execute(f'''UPDATE "{table_name}" SET ({columns[:-1]}) ({values[:-1]})''')
+            self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") ({values[:-2]})''')
         else:
-            ic(f'''UPDATE "{table_name}" SET ({columns[:-1]}) = 
-            ({values[:-1]}) WHERE {where}''')
-            self.cursor.execute(f'''UPDATE "{table_name}" SET ({columns[:-1]}) = 
-            ({values[:-1]}) WHERE {where}''')
+            ic(f'''UPDATE "{table_name}" SET ("{columns[:-2]}") = ({values[:-2]}) WHERE {where}''')
+            self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") = ({values[:-2]}) WHERE {where}''')
         self.conn.commit()
     
