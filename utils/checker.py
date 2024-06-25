@@ -46,7 +46,7 @@ class Checker:
       ic(str(td.text))
       if str(td.text).startswith("Адрес расчетов:"):
         address =str(td.text).split(":")[1]
-        if address[0].isalnum:
+        if address[0].isdigit:
           address = " ".join(address.split()[1:])
         if "федерального значения " in address:
           address = address.replace("федерального значения ","",1)
