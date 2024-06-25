@@ -7,14 +7,13 @@ from config import today
 from icecream import ic
 from app.keyboard import keyboard_Inline, keyboard_Markup, keyboard_YesNo, keyboard_right, create_keyboard_select, keyboard_back, create_keyboard_edit, cancel
 from random import randint
+from aiogram.enums.parse_mode import ParseMode
 
 router = Router()
 
-# @router.message(Command("add"))
-# async def start_reaction(message: Message, state : FSMContext):
-#     await state.clear()
-#     await message.answer("Отправьте чек в формате html")
-#     await state.set_state("waiting cheque.html")
+@router.message(CommandStart())
+async def start_reaction(message: Message, state : FSMContext):
+    await message.answer("Привет! Меня зовут drnkt-bot. Я здесь, чтобы ты присылал мне чеки из приложения «Проверка чеков ФНС»: После сканирования, жми «Действия с чеком - поделиться - формат html - отправить через telegram - drnkt_bot. Не забудь проверить, верный ли адрес торговой точки в чеке!")
 
 @router.message(F.content_type.in_(["document"]))
 # @router.message()
@@ -69,7 +68,7 @@ async def add_commentRight(message : Message, state : FSMContext):
     await state.update_data(Комментарий = message.text)
     data = await state.get_data()
     await message.answer(
-        f"Вот как будет выглядеть карточка\n@{data["user_name"]} побывал в {data["Название_компании"]}\n{data["Дата"]};\n{data["Адрес"]};\nЕго чек был {data["Чек №"]} за смену;\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))}\nКомментарий : {data["Комментарий"]}.",reply_markup=keyboard_right)
+        f"<U><I>Вот как будет выглядеть карточка</I></U>\n☕️ <B>{data["Название_компании"]}.</B>\n👏 Карточку внес @{data["user_name"]} 👏\n🏛️ {data["Адрес"]};\n⌚️ {data["Дата"]};\n🧾 Номер чека:{data["Чек №"]};\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))};\nКомментарий : {data["Комментарий"]}.",reply_markup=keyboard_right,parse_mode=ParseMode.HTML)
     await state.set_state("right")
 
 @router.callback_query(F.data == "No",StateFilter("comment"))
@@ -77,7 +76,7 @@ async def callback_No(call : CallbackQuery, state : FSMContext):
     await state.update_data(Комментарий = None)
     data = await state.get_data()
     await bot.edit_message_text(
-        f"Вот как будет выглядеть карточка\n@{data["user_name"]} побывал в {data["Название_компании"]}\n{data["Дата"]};\n{data["Адрес"]};\nЕго чек был {data["Чек №"]} за смену;\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]),2)}.",call.from_user.id,call.message.message_id,reply_markup=keyboard_right)
+        f"<U><I>Вот как будет выглядеть карточка</I></U>\n☕️ <B>{data["Название_компании"]}.</B>\n👏 Карточку внес @{data["user_name"]} 👏\n🏛️ {data["Адрес"]};\n⌚️ {data["Дата"]};\n🧾 Номер чека:{data["Чек №"]};\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))};\nКомментарий : {data["Комментарий"]}.",call.from_user.id,call.message.message_id,reply_markup=keyboard_right,parse_mode=ParseMode.HTML)
     await state.set_state("right")
 
 @router.callback_query(F.data == "Yes",StateFilter("right"))
@@ -135,12 +134,11 @@ async def get_card(call : CallbackQuery, state : FSMContext):
     data = dict(zip(columns,res))
     if data["Комментарий"] == "None":
         data["Комментарий"] = " --- "
+    text_message = f" ☕️<B>{data["Название_компании"]}.</B>\n👏 Карточку внес @{data["user_name"]} 👏\n🏛️ {data["Адрес"]};\n⌚️ {data["Дата"]};\n🧾 Номер чека:{data["Чек №"]};\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))};\nКомментарий : {data["Комментарий"]}."
     if state_data["type"] == "id":
-        await bot.edit_message_text(
-            f"@{data["user_name"]} побывал в {data["Название_компании"]}\n{data["Дата"]};\n{data["Адрес"]};\nЕго чек был {data["Чек №"]} за смену;\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))}\nКомментарий : {data["Комментарий"]}.",call.from_user.id,call.message.message_id,reply_markup=create_keyboard_edit(call.data.split()[-1]))
+        await bot.edit_message_text(text_message,call.from_user.id,call.message.message_id,reply_markup=create_keyboard_edit(call.data.split()[-1]),parse_mode=ParseMode.HTML)
     elif state_data["type"] == "text":
-        await bot.edit_message_text(
-            f"@{data["user_name"]} побывал в {data["Название_компании"]}\n{data["Дата"]};\n{data["Адрес"]};\nЕго чек был {data["Чек №"]} за смену;\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))}\nКомментарий : {data["Комментарий"]}.",call.from_user.id,call.message.message_id,reply_markup=keyboard_back)
+        await bot.edit_message_text(text_message,call.from_user.id,call.message.message_id,reply_markup=keyboard_back,parse_mode=ParseMode.HTML)
     await state.set_state("button")
 
 @router.callback_query(StateFilter("button"),F.data.startswith("edit"))
@@ -168,7 +166,7 @@ async def edit_await(message : Message,state : FSMContext):
     if data["Комментарий"] == "None":
         data["Комментарий"] = " --- "
     await message.answer(
-            f"@{data["user_name"]} побывал в {data["Название_компании"]}\n{data["Дата"]};\n{data["Адрес"]};\nЕго чек был {data["Чек №"]} за смену;\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))}\nКомментарий : {data["Комментарий"]}.",reply_markup=create_keyboard_edit(state_data["id"]))
+            f"☕️ <B>{data["Название_компании"]}.</B>\n👏 Карточку внес @{data["user_name"]} 👏\n🏛️ {data["Адрес"]};\n⌚️ {data["Дата"]};\n🧾 Номер чека:{data["Чек №"]};\nФД {data["ФД"]};\nСмена {data["Смена №"]};\nСреднее значение ФД/Смена = {round(int(data["ФД"])/int(data["Смена №"]))};\nКомментарий : {data["Комментарий"]}.",reply_markup=create_keyboard_edit(state_data["id"]),parse_mode=ParseMode.HTML)
     await state.set_state("button")
 
 @router.callback_query(StateFilter("button"),F.data == "Back")
