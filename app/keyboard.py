@@ -42,6 +42,11 @@ keyboard_right = InlKB(inline_keyboard=[
 )
 
 keyboard_Markup = ReplyKeyboardMarkup(resize_keyboard=True,keyboard=[[KButton(text = "KB1")],
-                                                              [KButton(text = "KB2")]])
+                                                               [KButton(text = "KB2")]])
 
 keyboard_Inline =InlKB(inline_keyboard=[[InKButton(text = "kb",callback_data="kb")]])
+
+names_company = ReplyKeyboardMarkup(resize_keyboard=True,keyboard=[[KButton(text="Stars"),KButton(text="Surf")],
+                                                                  [KButton(text="Cofix"),KButton(text="OnePrice")],
+                                                                  [KButton(text="ПравдаКофе"),KButton(text="Do.Bro")]
+                                                                  ],one_time_keyboard=True,is_persistent=True)

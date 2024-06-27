@@ -106,7 +106,6 @@ class Request():
         if where == None:
             self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") ({values[:-2]})''')
         else:
-            ic(f'''UPDATE "{table_name}" SET ("{columns[:-2]}") = ({values[:-2]}) WHERE {where}''')
             self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") = ({values[:-2]}) WHERE {where}''')
         self.conn.commit()
     
