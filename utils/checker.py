@@ -15,7 +15,7 @@ class Checker:
             soup = BeautifulSoup(src,"lxml")
             if not self.__checker_on_cheque(soup):
               raise Exception("Это не кассовый чек") 
-            ##### взять данные
+            ### взять данные
             tds = soup.find("tbody").find_all("td")
             address = self._take_address(tds)
             data = self._take_other_data(tds)
@@ -32,6 +32,10 @@ class Checker:
   def __checker_on_cheque(self, soup : BeautifulSoup):
     if soup.find("p",class_="versionFFD"):
       return  "КАССОВЫЙ ЧЕК" in str(soup.find("p",class_="versionFFD").text)
+    elif soup.find("caption").find_all("li"):
+      for elem in soup.find("caption").find_all("li"):
+        if "КАССОВЫЙ ЧЕК" in elem.text:
+          return True
     return False
 
 
@@ -43,7 +47,7 @@ class Checker:
 
   def _take_address(self,tds : BeautifulSoup) -> Union[None,str]:
     for td in tds:
-      if str(td.text).startswith("Адрес расчетов:"):
+      if str(td.text).startswith("Адрес"):
         address =str(td.text).split(":")[1]
         if address.strip()[0].isdigit():
           address = " ".join(address.split()[1:])
@@ -58,13 +62,17 @@ class Checker:
     data = dict()
     # names = ["Дата","Смена","Чек","ФД №"]
     for td in tds:
+      if ":" in str(td.text):
+        splitter = ":"
+      else:
+        splitter = " "
       if str(td.text).startswith("Дата"):
         data["date_time"] = str(td.text).replace(":","@@",1).split("@@")[1].strip()
       elif str(td.text).startswith("Чек"):
-        data["cheque_number"] = str(td.text).split(":")[1].strip()
-      elif str(td.text).startswith("ФД №"):
-        data["FD"] = str(td.text).replace(" №","").split()[1].strip()
+        data["cheque_number"] = str(td.text).replace(" №","").split(splitter)[1].strip()
+      elif str(td.text).startswith("ФД"):
+        data["FD"] = str(td.text).replace(" №","").split(splitter)[1].strip()
       elif str(td.text).startswith("Смена"):
-        data["shift_number"] = str(td.text).split(":")[1].strip()
+        data["shift_number"] = str(td.text).replace(" №","").split(splitter)[1].strip()
     return data
 
