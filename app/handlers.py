@@ -1,9 +1,9 @@
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import CommandStart, StateFilter,Command
 from aiogram import F,Router
 from aiogram.fsm.context import FSMContext
-from loader import bot, rq , chk
-from config import today
+from loader import bot, rq , chk, excl
+from config import today, ADMIN
 from icecream import ic
 from app.keyboard import (keyboard_Inline, keyboard_Markup, keyboard_YesNo, keyboard_right,
 create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company,)
@@ -192,3 +192,17 @@ async def list_my_cards(message : Message, state : FSMContext):
     await state.set_state("id")
 
 
+@router.message(Command("admin"))
+async def send_excel_tb(message : Message):
+    if str(message.from_user.id) in ADMIN:
+        with rq:
+            res = rq.select_many("cards",["user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","Comment"])
+        with excl:
+            try:
+                excl.create_xl(res=res)
+            except Exception as ex:
+                ic(ex)
+                await message.answer("Ошибка, попробуйте ещё раз")
+                return
+        file = FSInputFile(excl.file_name)
+        await bot.send_document(chat_id=message.from_user.id,document=file)

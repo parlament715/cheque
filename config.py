@@ -9,4 +9,6 @@ BOT_TOKEN = (os.getenv('token'))
 
 USERS = (os.getenv('users'))
 
+ADMIN = (os.getenv('admin'))
+
 today = datetime.now() + timedelta(days=0)
