@@ -110,11 +110,13 @@ async def callback_No(call : CallbackQuery, state : FSMContext):
 @router.message(Command("search"))
 async def search(message : Message, state : FSMContext):
     await state.clear()
-    await message.answer("Напишите пожалуйста улицу, по которой вы хотите совершить поиск")
+    await message.answer("Напишите пожалуйста улицу, по которой вы хотите совершить поиск",reply_markup=cancel)
     await state.set_state("await search")
 
 @router.message(StateFilter("await search"))
 async def await_search(message : Message, state : FSMContext):
+    if message.text == "Отмена ❌":
+        return
     if len(message.text) < 3:
         await message.answer("Строка поиска должна быть не менее 3-ёх символов")
         return
