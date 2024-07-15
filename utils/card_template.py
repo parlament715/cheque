@@ -27,7 +27,7 @@ def format_text(text:str,data:dict):
     user_name_telegram=data["user_name_telegram"].replace("<","").replace(">",""),
     address=data["address"].replace("<","").replace(">",""),
     date_time=data["date_time"].replace("<","").replace(">",""),
-    cheque_number=data["cheque_number"].replace("<","").replace(">",""),
+    cheque_number=data["cheque_number"],
     FD=data["FD"].replace("<","").replace(">",""),
     shift_number=data["shift_number"].replace("<","").replace(">",""),
     FD_shift_number=round(int(data["FD"])/int(data["shift_number"])),
