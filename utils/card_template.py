@@ -23,14 +23,14 @@ text = "\
 
 
 def format_text(text:str,data:dict):
-  return text.format(company_name=data["company_name"],
-    user_name_telegram=data["user_name_telegram"],
-    address=data["address"],
-    date_time=data["date_time"],
-    cheque_number=data["cheque_number"],
-    FD=data["FD"],
-    shift_number=data["shift_number"],
+  return text.format(company_name=data["company_name"].replace("<","").replace(">",""),
+    user_name_telegram=data["user_name_telegram"].replace("<","").replace(">",""),
+    address=data["address"].replace("<","").replace(">",""),
+    date_time=data["date_time"].replace("<","").replace(">",""),
+    cheque_number=data["cheque_number"].replace("<","").replace(">",""),
+    FD=data["FD"].replace("<","").replace(">",""),
+    shift_number=data["shift_number"].replace("<","").replace(">",""),
     FD_shift_number=round(int(data["FD"])/int(data["shift_number"])),
-    Comment = data["Comment"])
+    Comment = data["Comment"].replace("<","").replace(">",""))
 ### round(int(data["ФД"])/int(data["Смена №"]))
 # print(text.format(company_name="Правда Кофе",user_name_telegram="@MaxSw",address="г. Москва, ул Тверская-Ямская 1-я, д 2, стр 1",date_time="17.05.2024 07:14",cheque_number=122,FD="88216",shift_number="569",FD_shift_number=round(int("88216")/int("569")),Comment = "---"))
