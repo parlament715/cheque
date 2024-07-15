@@ -26,10 +26,10 @@ def format_text(text:str,data:dict):
   return text.format(company_name=data["company_name"].replace("<","").replace(">",""),
     user_name_telegram=data["user_name_telegram"].replace("<","").replace(">",""),
     address=data["address"].replace("<","").replace(">",""),
-    date_time=data["date_time"].replace("<","").replace(">",""),
+    date_time=data["date_time"],
     cheque_number=data["cheque_number"],
-    FD=data["FD"].replace("<","").replace(">",""),
-    shift_number=data["shift_number"].replace("<","").replace(">",""),
+    FD=data["FD"],
+    shift_number=data["shift_number"],
     FD_shift_number=round(int(data["FD"])/int(data["shift_number"])),
     Comment = data["Comment"].replace("<","").replace(">",""))
 ### round(int(data["ФД"])/int(data["Смена №"]))
