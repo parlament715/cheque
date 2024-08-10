@@ -12,6 +12,7 @@ rm = ReplyKeyboardRemove()
 
 def create_keyboard_select(all_list : List[tuple]) -> InlKB:
   builder = InlineKeyboardBuilder()
+  all_list.reverse()
   for element in all_list:
     for i in range(1,3):
       builder.button(text=f"{element[i]}", callback_data=f"id {element[0]}" )
