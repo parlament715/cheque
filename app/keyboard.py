@@ -29,7 +29,7 @@ def create_keyboard_edit(id : str):
   res = InlKB(inline_keyboard=[
     [InKButton(text = "Изменить адрес 🏙", callback_data=f"edit,address,{id}")],
     [InKButton(text="Изменить компанию 📗",callback_data=f"edit,company_name,{id}")],
-    [InKButton(text="Изменить комментарий 💬",callback_data=f"edit,Comment,{id}")],
+    [InKButton(text="Изменить комментарий 💬",callback_data=f"edit,comment,{id}")],
     [InKButton(text = "⬅️ Назад", callback_data="Back")]
   ])
   return res

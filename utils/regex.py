@@ -1,17 +1,18 @@
 import re
 from typing import List,Union
 from icecream import ic
+import logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# настройка обработчика и форматировщика для logger2
 handler = logging.FileHandler(f"log/{__name__}.log", mode='w', encoding = "UTF-8")
 formatter = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
-# добавление форматировщика к обработчику
 handler.setFormatter(formatter)
-# добавление обработчика к логгеру
 logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 class Regex:
-    house_variants = ["дом", "д", "корпус", "корп", "строение", "стр", "ш","участок", "уч", "участ", "квартал", "квл", "квртл"]
+    house_variants = [
+        "дом", "д", "корпус", "корп", "строение", "стр", "ш",
+        "участок", "уч", "участ", "квартал", "квл", "квртл"
+    ]
     street_types = [
         "улица", "ул",
         "проспект", "просп", "пр-кт",
@@ -21,7 +22,7 @@ class Regex:
         "шоссе", "ш",
         "бульвар", "бульв", "б-р",
         "набережная", "наб",
-        "проезд", "пр", "пр-зд", 
+        "проезд", "пр", "пр-зд",
         "аллея", "ал",
         "микрорайон", "мкр", "мкрн",
         "квартал", "кв",
@@ -44,80 +45,72 @@ class Regex:
         "пост", "пост",
         "тракт", "тр",
         "станция", "ст"
-        ]
+    ]
+
     @classmethod
-    def format_address(cls,address : str) -> str:
+    def format_address(cls, address: str) -> str:
+        """Format a raw address string into a standardized format."""
         city = cls._take_city(address)
         street = cls._take_street(address)
         house = cls._take_house(address)
-        if street is None or house is None or city is None:
-            logger.info(f"Regex : {address} -> {city}, {street}, {house}")
-            return address # возвращаем тот же адрес
-        logger.info(f"Done : {address} -> {city + ", " + street + ", " + house}")
-        return city + ", " + street + ", " + house
 
-      
-
+        if any(value is None for value in [city, street, house]):
+            logger.info(f"Error : {address} - > {city}, {street}, {house}")
+            return address
+        logger.info(f"Done : {address} - > {city}, {street}, {house}")
+        return f"{city}, {street}, {house}"
 
     @classmethod
-    def _take_city(cls, address : str) -> Union[str,None]:
-        if re.search(f'(?:Москва)',address):
+    def _take_city(cls, address: str) -> Union[str, None]:
+        if "Москва" in address:
             return "г. Москва"
-        pattern = r"(?:,|\s)(?:город|г|Г)(?:[\.\s]*)([^,\.]*)(?:,|\s)"
-        res = re.search(pattern,address)
-        if res:
-          return res.group().replace(",","").strip()
-        else:
-          res = re.search(r"[0-9]{1,}\s([а-яА-Я]*)\s",address)
-          if res:
-            return "г." + res.group().split()[-1].strip()
-          return None
+
+        pattern = r",\s*(город|г|Г)\s*([^,]*),*"
+        match = re.search(pattern, address)
+        if match:
+            return match.group(2).strip()
+
+        match = re.search(r"\d+\s*([а-яА-Я]*)\s*", address)
+        if match:
+            return f"г. {match.group(1).strip()}"
+
+        return None
 
     @classmethod
-    def _take_house(cls,address : str) -> Union[str,None]:
+    def _take_house(cls, address: str) -> Union[str, None]:
         variants = cls._variants(cls.house_variants)
-        pattern = rf"(?:,|\s)(?:{variants})(?:[\.\s]*)([^,\.]*)(?:,|\b)"
-        res = re.search(pattern,address)
-        if res:
-          res = res.group().replace(",","").strip()
-          if re.fullmatch(rf"(?:{variants})",res): ### Если отловил только ул или пр-д то проверяем наоборот например Лихачёва пр-т
-            reversed_pattern = fr"(?:,|\s)([^,\.]*)(?:{variants})(?:[\.\s]*)(?:,|\s)"
-            reversed_res = re.search(reversed_pattern, address)
-            if reversed_res:
-              return reversed_res.group().replace(",","").strip()
-            return None
-
-          return res
-        return None
-
-    @classmethod
-    def _take_street(cls,address : str) -> Union[str,None]:
-        variants = cls._variants(cls.street_types)
-        pattern = fr"(?:,|\s)(?:{variants})(?:[\.\s]*)([^,\.]*)(?:,|\s)"
-        res = re.search(pattern,address)
-        
-        if res:
-          res = res.group().replace(",","").strip()
-          if re.fullmatch(rf"(?:{variants})",res): ### Если отловил только ул или пр-д то проверяем наоборот например Лихачёва пр-т
-            reversed_pattern = fr"(?:,|\s)([^,\.]*)(?:{variants})(?:[\.\s]*)(?:,|\s)"
-            reversed_res = re.search(reversed_pattern, address)
-            if reversed_res: # Если он есть
-              reversed_res = reversed_res.group().replace(",","").strip()
-              if re.fullmatch(rf"(?:{variants})",reversed_res): # если он не нашёл ничего кроме пр-т даже так то -> None
+        pattern = fr",\s*({variants})\s*([^,]*),*"
+        match = re.search(pattern, address)
+        if match:
+            house = match.group(2).strip()
+            if re.fullmatch(rf"({variants})", house):
+                reversed_pattern = fr",\s*([^,]*)\s*({variants}),*"
+                reversed_match = re.search(reversed_pattern, address)
+                if reversed_match:
+                    return reversed_match.group(1).strip()
                 return None
-              return reversed_res
-            return None
-
-          return res
+            return house
         return None
-      
-    @classmethod
-    def _variants(cls, types : List[str]) -> str:
-        string = r""
-        for elem in types:
-          string+= elem + r"|"
-        return string[:-1]
 
+    @classmethod
+    def _take_street(cls, address: str) -> Union[str, None]:
+        variants = cls._variants(cls.street_types)
+        pattern = fr",\s*({variants})\s*([^,]*),*"
+        match = re.search(pattern, address)
+        if match:
+            street = match.group(2).strip()
+            if re.fullmatch(rf"({variants})", street):
+                reversed_pattern = fr",\s*([^,]*)\s*({variants}),*"
+                reversed_match = re.search(reversed_pattern, address)
+                if reversed_match and not re.fullmatch(rf"({variants})", reversed_match.group(1).strip()):
+                    return reversed_match.group(1).strip()
+                return None
+            return street
+        return None
+
+    @classmethod
+    def _variants(cls, types: List[str]) -> str:
+        return "|".join(types)
     
 
 
