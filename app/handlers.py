@@ -6,11 +6,13 @@ from loader import bot, rq , chk, excl
 from config import today, ADMIN
 from icecream import ic
 from app.keyboard import (keyboard_Inline, keyboard_Markup, keyboard_YesNo, keyboard_right,
-create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company,)
+create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company, keyboard_try_again)
 from random import randint
 from aiogram.enums.parse_mode import ParseMode
 from utils import card_template
+from utils.parser import Parse
 router = Router()
+
 
 @router.message(CommandStart())
 async def start_reaction(message: Message, state : FSMContext):
@@ -19,6 +21,7 @@ async def start_reaction(message: Message, state : FSMContext):
 @router.message(F.content_type.in_(["document"]))
 # @router.message()
 async def add_cheque(message : Message,state : FSMContext):
+    await bot.send_chat_action(message.from_user.id, action="find_location")
     try :
         file_id = message.document.file_id
         file_name = message.document.file_name
@@ -37,22 +40,62 @@ async def add_cheque(message : Message,state : FSMContext):
             return
     await state.set_data(response)
     await state.update_data(user_name_telegram = message.from_user.username)
-    if not response["address"]:
-        await message.answer("Программе не удалось найти адрес, напишите его вручную")
+    if not response["address"]:### доделать
+        await message.answer("Программе не удалось найти адрес, напишите его вручную\nВАЖНО указать в адресе город, улицу и номер дома!!!")
         await state.set_state("update address")
         return
+    if response["coordinates"] is None:
+        await state.update_data(coordinates = "---")
+        await state.update_data(status = 2)
+        ic("status 2")
+    else:
+        ic("status 1")
+        await state.update_data(status = 1)
+    
     await message.answer("Напишите название компании",reply_markup=names_company)
     await state.set_state("take company name")
 
 
 @router.message(StateFilter("update address"))
 async def update_address(message : Message, state : FSMContext):
-    # ic(message.text)
-    await state.update_data(address = message.text)
-    await message.answer("Напишите название компании",reply_markup=names_company)
-    await state.set_state("take company name")
+    await bot.send_chat_action(message.from_user.id, action="find_location")
+    coordinates, right_address = await Parse.parse_coordinates_and_address(message.text)
+    await state.update_data(incorrect_address = message.text,right_coordinates = coordinates,right_address = right_address)
+    if coordinates is None:
+        await message.answer("Программа не смогла распознать адрес",reply_markup=keyboard_try_again)
+        await state.set_state("try_again_address")
+        return
+    else:
+        await message.answer(f"Программе удалось распознать ваш адрес?\n{right_address}",reply_markup=keyboard_YesNo)
+        await state.set_state("agree")
+    
+    
+@router.callback_query(StateFilter("agree"))
+async def check_agree(call : CallbackQuery, state : FSMContext):
+    if call.data == "Yes":
+        data = await state.get_data()
+        await state.update_data(address = data["right_address"],coordinates = data["right_coordinates"],status = 1)
+        await call.message.bot.edit_message_text('Напишите название компании',call.from_user.id,call.message.message_id,reply_markup=names_company)
+        await state.set_state("take company name")
+    if call.data == "No":
+        await call.message.bot.edit_message_text("Выберете один из вариантов",call.from_user.id,call.message.message_id,reply_markup=keyboard_try_again)
+        await state.set_state("try_again_address")
+        
 
     
+
+@router.callback_query(StateFilter("try_again_address"))
+async def try_again_address(call : CallbackQuery, state : FSMContext):
+    if call.data == "Yes":
+        await call.message.bot.edit_message_text('Попробуйте ещё, для более точного распознавания стоит добавить запятые между частями адреса и такие сокращения как "г.", "ул." и так далее.',call.from_user.id,call.message.message_id)
+        await state.set_state("update address")
+    elif call.data == "No":
+        data = await state.get_data()
+        await state.update_data(address = data["incorrect_address"],coordinates = "---",status = 2)
+        await call.message.delete()
+        await call.message.answer('Напишите название компании',reply_markup=names_company)
+        await state.set_state("take company name")
+
 @router.message(StateFilter("take company name"))
 async def take_company_name(message : Message, state : FSMContext):
     await state.update_data(company_name = message.text)
@@ -66,7 +109,7 @@ async def callback_Yes(call : CallbackQuery,state : FSMContext):
 
 @router.message(StateFilter("add comment"))
 async def add_commentRight(message : Message, state : FSMContext):
-    await state.update_data(Comment = message.text)
+    await state.update_data(comment = message.text)
     data = await state.get_data()
     await message.answer(card_template.format_text(card_template.text_template,data),
     parse_mode=ParseMode.HTML,
@@ -75,7 +118,7 @@ async def add_commentRight(message : Message, state : FSMContext):
 
 @router.callback_query(F.data == "No",StateFilter("comment"))
 async def callback_No(call : CallbackQuery, state : FSMContext):
-    await state.update_data(Comment = "---")
+    await state.update_data(comment = "---")
     data = await state.get_data()
     await bot.edit_message_text(card_template.format_text(card_template.text_template,data),
     call.from_user.id,call.message.message_id,reply_markup=keyboard_right,parse_mode=ParseMode.HTML)
@@ -95,7 +138,9 @@ async def callback_Yes_right(call : CallbackQuery,state : FSMContext):
             ("cheque_number",data["cheque_number"]),
             ("FD",data["FD"]),
             ("shift_number",data["shift_number"]),
-            ("Comment",data["Comment"])
+            ("coordinates",data["coordinates"]),
+            ("status",data["status"]),
+            ("comment",data["comment"])
             ])
     ###
     await bot.edit_message_text("Карточка загружена в базу данных",call.from_user.id,call.message.message_id)
@@ -134,7 +179,7 @@ async def get_card(call : CallbackQuery, state : FSMContext):
     state_data = await state.get_data()
     with rq:
         res = rq.select_one("cards",["@*"],f'"id"={call.data.split()[-1]}')
-    columns = ("id","id_telegram","user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","Comment")
+    columns = ("id","id_telegram","user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","comment")
     data = dict(zip(columns,res))
     text_message = card_template.format_text(card_template.text,data)
     if state_data["type"] == "id":
@@ -150,7 +195,7 @@ async def button(call : CallbackQuery, state : FSMContext):
         await call.message.answer("Введите новый адрес",reply_markup=cancel)
     elif "company_name" in call.data:
         await call.message.answer("Введите новое название компании",reply_markup=cancel)
-    elif "Comment" in call.data:
+    elif "comment" in call.data:
         await call.message.answer("Введите новый комментарий",reply_markup=cancel)
     await state.set_state("edit await")
     await call.answer()
@@ -163,7 +208,7 @@ async def edit_await(message : Message,state : FSMContext):
         if message.text != "Отмена ❌":
             rq.write_update("cards",[(state_data["edit"],message.text)],f'id = {state_data["id"]}')
         res = rq.select_one("cards", ["@*"], f'id = {state_data["id"]}')
-    columns = ("id","id_telegram","user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","Comment")
+    columns = ("id","id_telegram","user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","comment")
     data = dict(zip(columns,res))
     await message.answer(card_template.format_text(card_template.text,data),
     reply_markup=create_keyboard_edit(state_data["id"]),parse_mode=ParseMode.HTML)
@@ -198,7 +243,7 @@ async def list_my_cards(message : Message, state : FSMContext):
 async def send_excel_tb(message : Message):
     if str(message.from_user.id) in ADMIN:
         with rq:
-            res = rq.select_many("cards",["user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","Comment"])
+            res = rq.select_many("cards",["user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","comment"])
         with excl:
             try:
                 excl.create_xl(res=res)

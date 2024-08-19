@@ -5,7 +5,7 @@ from utils.checker import Checker
 from utils.excel import Excel_db
 
 excl = Excel_db()
-rq = Request()
+rq = Request("request.db")
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 chk = Checker(bot)

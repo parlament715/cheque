@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from typing import Union, Dict
 from icecream import ic
+from utils.parser import Parse
 class Checker:
 
   def __init__ (self,bot):
@@ -19,7 +20,12 @@ class Checker:
             tds = soup.find("tbody").find_all("td")
             address = self._take_address(tds)
             data = self._take_other_data(tds)
+            if address is None:
+              coordinates = None
+            else:
+              coordinates, address = await Parse.parse_coordinates_and_address(address)
             data["address"] = address
+            data["coordinates"] = coordinates
             return data
 
         else:
@@ -49,12 +55,6 @@ class Checker:
     for td in tds:
       if str(td.text).startswith("Адрес"):
         address =str(td.text).split(":")[1]
-        if address.strip()[0].isdigit():
-          address = " ".join(address.split()[1:])
-        if "федерального значения " in address:
-          address = address.replace("федерального значения ","",1)
-        if "муниципальный округ " in address:
-          address = address.replace("муниципальный округ ","",1)
         return address.strip()
     return None 
 

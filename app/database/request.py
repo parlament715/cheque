@@ -6,8 +6,9 @@ from typing import Union, Optional, Tuple, List, Any
 
 class Request():
 
-    def __init__(self):
-        conn = sqlite3.connect('request.db')
+    def __init__(self,path):
+        self.path = path
+        conn = sqlite3.connect(path)
 
         cursor = conn.cursor()
 
@@ -21,13 +22,15 @@ class Request():
                         cheque_number INTEGER NOT NULL,
                         FD INTEGER NOT NULL,
                         shift_number INTEGER NOT NULL,
-                        Comment TEXT 
+                        coordinates TEXT,
+                        status INTEGER NOT NULL,
+                        comment TEXT 
                         )
                         ''')
         conn.close()
 
     def __enter__(self):
-        self.conn = sqlite3.connect('request.db')
+        self.conn = sqlite3.connect(self.path)
         self.cursor = self.conn.cursor()
         return self.cursor
     

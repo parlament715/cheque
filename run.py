@@ -20,8 +20,13 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(message)s :%(name)s -%(asctime)s'
-                        ,level=logging.DEBUG)
+    logging.basicConfig(filename=f"log/{__name__}.log",
+                    filemode='w',
+                    format="%(name)s %(asctime)s %(levelname)s %(message)s"
+                        ,level=logging.DEBUG,
+                        encoding = "UTF-8")
+    logging.getLogger('selenium').setLevel(logging.WARNING)
+    logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
     asyncio.run(main())
 
 
