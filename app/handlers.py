@@ -56,6 +56,7 @@ async def add_cheque(message : Message,state : FSMContext):
     await state.update_data(user_name_telegram = message.from_user.username)
     if not response["address"]:### доделать
         logger.warning(f"{message.from_user.username} не удалось найти адрес")
+        await state.update_data(type_update = "add address")
         await message.answer("Программе не удалось найти адрес, напишите его вручную\nВАЖНО указать в адресе город, улицу и номер дома!!!")
         await state.set_state("update address")
         return
@@ -95,9 +96,24 @@ async def check_agree(call : CallbackQuery, state : FSMContext):
     if call.data == "Yes":
         logger.info(f"{call.from_user.username} оставляем правильные координаты, статус 1")
         data = await state.get_data()
-        await state.update_data(address = data["right_address"],coordinates = data["right_coordinates"],status = 1)
-        await call.message.bot.edit_message_text('Напишите название компании',call.from_user.id,call.message.message_id,reply_markup=names_company)
-        await state.set_state("take company name")
+        if data["type"] == "add address":
+            await state.update_data(address = data["right_address"],coordinates = data["right_coordinates"],status = 1)
+            await call.message.delete()
+            await call.message.answer('Напишите название компании',reply_markup=names_company)
+            await state.set_state("take company name")
+        elif data["type"] == "update address":
+            with rq:
+                rq.write_update("cards",[("address",data["right_address"])],f'id={data["id"]}')
+                rq.write_update("cards",[("coordinates",data["right_coordinates"])],f'id={data["id"]}')
+                rq.write_update("cards",[("status",1)],f'id={data["id"]}')
+                res = rq.select_one("cards", ["@*"], f'id={data["id"]}')
+            columns = ("id","id_telegram","user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","coordinates","status","comment")
+            data = dict(zip(columns,res))
+            await call.message.bot.edit_message_text(card_template.format_text(card_template.text,data),call.from_user.id,call.message.message_id,
+            reply_markup=create_keyboard_edit(data["id"]),parse_mode=ParseMode.HTML)
+            await state.set_state("button")
+                
+
     if call.data == "No":
         logger.info(f"{call.from_user.username} пробуем ещё раз или оставляем неправильный адрес")
         await call.message.bot.edit_message_text("Выберете один из вариантов",call.from_user.id,call.message.message_id,reply_markup=keyboard_try_again)
@@ -115,11 +131,23 @@ async def try_again_address(call : CallbackQuery, state : FSMContext):
     elif call.data == "No":
         logger.info(f"{call.from_user.username} оставляем так, статус 2")
         data = await state.get_data()
-        await state.update_data(address = data["incorrect_address"],coordinates = "---",status = 2)
-        await call.message.delete()
-        logger.info(f"{call.from_user.username} спрашиваем название компании")
-        await call.message.answer('Напишите название компании',reply_markup=names_company)
-        await state.set_state("take company name")
+        if data["type_update"] == "add address":
+            await state.update_data(address = data["incorrect_address"],coordinates = "---",status = 2)
+            await call.message.delete()
+            logger.info(f"{call.from_user.username} спрашиваем название компании")
+            await call.message.answer('Напишите название компании',reply_markup=names_company)
+            await state.set_state("take company name")
+        elif data["type_update"] == "update address":
+            with rq:
+                rq.write_update("cards",[("address",data["incorrect_address"])],f'id={data["id"]}')
+                rq.write_update("cards",[("coordinates","---")],f'id={data["id"]}')
+                rq.write_update("cards",[("status",2)],f'id={data["id"]}')
+                res = rq.select_one("cards", ["@*"], f'id={data["id"]}')
+            columns = ("id","id_telegram","user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","coordinates","status","comment")
+            data = dict(zip(columns,res))
+            await call.message.bot.edit_message_text(card_template.format_text(card_template.text,data),call.from_user.id,call.message.message_id,
+            reply_markup=create_keyboard_edit(data["id"]),parse_mode=ParseMode.HTML)
+            await state.set_state("button")
 
 @router.message(StateFilter("take company name"))
 async def take_company_name(message : Message, state : FSMContext):
@@ -231,13 +259,16 @@ async def button(call : CallbackQuery, state : FSMContext):
     if "address" in call.data:
         logger.info(f"{call.from_user.username} хочет отредактировать адрес")
         await call.message.answer("Введите новый адрес",reply_markup=cancel)
+        await state.update_data(type_update = "update address")
+        await state.set_state("update address")
     elif "company_name" in call.data:
         logger.info(f"{call.from_user.username} хочет отредактировать название компании")
         await call.message.answer("Введите новое название компании",reply_markup=cancel)
+        await state.set_state("edit await")
     elif "comment" in call.data:
         logger.info(f"{call.from_user.username} хочет отредактировать комментарий")
         await call.message.answer("Введите новый комментарий",reply_markup=cancel)
-    await state.set_state("edit await")
+        await state.set_state("edit await")
     await call.answer()
 
 
@@ -261,7 +292,7 @@ async def back(call :CallbackQuery,state: FSMContext):
     data = await state.get_data()
     if data["type"] == "id":
         with rq:
-            res =rq.select_many("cards",["id", "company_name", "address"],f'id_telegram = {data["filter"]}')
+            res =rq.select_many("cards",["id", "company_name", "address"],f'id_telegram = {call.from_user.id}')
     elif data["type"] == "text":
         with rq:
             res =rq.select_many("cards",["id", "company_name", "address"],f'address LIKE "%{data["filter"]}%"')

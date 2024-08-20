@@ -11,7 +11,7 @@ rm = ReplyKeyboardRemove()
 
 
 keyboard_try_again = InlKB(inline_keyboard=[
-  [InKButton(text = "Попробовать ещё раз вбить адрес 🧩", callback_data="Yes")],[InKButton(text="Оставить такой как есть ❎",callback_data="No")]
+  [InKButton(text = "Попробовать ещё раз вбить адрес 🧩", callback_data="Yes")],[InKButton(text="Оставить такой какой вбил я ❎",callback_data="No")]
 ]
 )
 

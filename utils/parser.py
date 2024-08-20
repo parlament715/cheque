@@ -28,7 +28,7 @@ class Parse:
     _options.add_argument('log-level=3')
 
     _options.add_argument("--disable-blink-features=AutomationControlled")
-    # _options.add_argument("--headless")
+    _options.add_argument("--headless")
     _browser = webdriver.Chrome(options=_options)
     logger.info("Browser is open")
     
@@ -40,7 +40,7 @@ class Parse:
         logger.info(address)
         cls._browser.get(cls._base_url)
         logger.info("Getting page ...")
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.4)
         search_box=cls._browser.find_element("class name", "input__control")
         address = Regex.format_address(address)
         logger.info(f"After regex : {address}")

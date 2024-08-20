@@ -108,7 +108,7 @@ class Request():
             values += value + ", "
         if where == None:
             self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") ({values[:-2]})''')
-        else:
+        else:### переделать не работает больше одного параметра за раз
             self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") = ({values[:-2]}) WHERE {where}''')
         self.conn.commit()
     
