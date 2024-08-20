@@ -29,6 +29,7 @@ class Parse:
 
     _options.add_argument("--disable-blink-features=AutomationControlled")
     _options.add_argument("--headless")
+    _options.add_argument("--no-sandbox")
     _browser = webdriver.Chrome(options=_options)
     logger.info("Browser is open")
     
@@ -36,7 +37,7 @@ class Parse:
     @classmethod
     async def parse_coordinates_and_address(cls, address : str) -> Tuple[Tuple[str,str],str]:
         if address == None:
-          return None, None
+            return None, None
         logger.info(address)
         cls._browser.get(cls._base_url)
         logger.info("Getting page ...")
@@ -58,12 +59,12 @@ class Parse:
         soup = BeautifulSoup(html,"html.parser")
         right_address = soup.find("div",class_ = "toponym-card-title-view__description")
         if right_address:
-          coordinates = soup.find("div",class_ = "toponym-card-title-view__coords-badge")
-          logger.info("Done")
-          return coordinates.text,right_address.text
+            coordinates = soup.find("div",class_ = "toponym-card-title-view__coords-badge")
+            logger.info("Done")
+            return coordinates.text,right_address.text
         else:
-          logger.info("Error")
-          return None, address
+            logger.info("Error")
+            return None, address
 
 
 
