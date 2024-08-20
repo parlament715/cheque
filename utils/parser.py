@@ -28,7 +28,7 @@ class Parse:
     _options.add_argument('log-level=3')
 
     _options.add_argument("--disable-blink-features=AutomationControlled")
-    _options.add_argument("--headless")
+    # _options.add_argument("--headless")
     _options.add_argument("--no-sandbox")
     _browser = webdriver.Chrome(options=_options)
     logger.info("Browser is open")
@@ -41,7 +41,7 @@ class Parse:
         logger.info(address)
         cls._browser.get(cls._base_url)
         logger.info("Getting page ...")
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(0.25)
         search_box=cls._browser.find_element("class name", "input__control")
         address = Regex.format_address(address)
         logger.info(f"After regex : {address}")
@@ -54,17 +54,25 @@ class Parse:
                 cls._browser.find_element("class name", "spinner-view_small__circle")
             except:
                 break
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.4)
         html = cls._browser.page_source
         soup = BeautifulSoup(html,"html.parser")
-        right_address = soup.find("div",class_ = "toponym-card-title-view__description")
-        if right_address:
-            coordinates = soup.find("div",class_ = "toponym-card-title-view__coords-badge")
-            logger.info("Done")
-            return coordinates.text,right_address.text
-        else:
-            logger.info("Error")
+        organizations = None
+        try:
+            organizations = soup.find("div",class_ = "tabs-select-view__title _name_inside")
+        except:
+            ic("Не нашлось организаций")
             return None, address
+        if organizations:
+            right_address = soup.find("div",class_ = "toponym-card-title-view__description")
+            if right_address:
+                coordinates = soup.find("div",class_ = "toponym-card-title-view__coords-badge")
+                logger.info(f"+++ {address} -> {right_address.text} ")
+                return coordinates.text,right_address.text
+            else:
+                logger.warning("Error : " + address)
+                return None, address
+        return None, address
 
 
 

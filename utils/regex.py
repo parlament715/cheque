@@ -12,7 +12,7 @@ handler.setFormatter(formatter)
 # добавление обработчика к логгеру
 logger.addHandler(handler)
 class Regex:
-    house_variants = ["дом", "д", "корпус", "корп", "строение", "стр", "ш","участок", "уч", "участ", "квартал", "квл", "квртл"]
+    house_variants = ["дом", "д", "корпус", "корп", "строение", "стр","участок", "уч", "участ", "квартал", "квл", "квртл"]
     street_types = [
         "улица", "ул",
         "проспект", "просп", "пр-кт",
@@ -52,7 +52,7 @@ class Regex:
         street = cls._take_street(address)
         house = cls._take_house(address)
         if street is None or house is None or city is None:
-            logger.info(f"Regex : {address} -> {city}, {street}, {house}")
+            logger.warning(f"Error : {address} -> {city}, {street}, {house}")
             return address # возвращаем тот же адрес
         logger.info(f"Done : {address} -> {city + ", " + street + ", " + house}")
         return city + ", " + street + ", " + house
@@ -67,12 +67,12 @@ class Regex:
         pattern = r"(?:,|\s)(?:город|г|Г)(?:[\.\s]*)([^,\.]*)(?:,|\s)"
         res = re.search(pattern,address)
         if res:
-          return res.group().replace(",","").strip()
+            return res.group().replace(",","").strip()
         else:
-          res = re.search(r"[0-9]{1,}\s([а-яА-Я]*)\s",address)
-          if res:
-            return "г." + res.group().split()[-1].strip()
-          return None
+            res = re.search(r"[0-9]{1,}\s([а-яА-Я]*)\s",address)
+            if res:
+                return "г." + res.group().split()[-1].strip()
+            return None
 
     @classmethod
     def _take_house(cls,address : str) -> Union[str,None]:
@@ -80,15 +80,15 @@ class Regex:
         pattern = rf"(?:,|\s)(?:{variants})(?:[\.\s]*)([^,\.]*)(?:,|\b)"
         res = re.search(pattern,address)
         if res:
-          res = res.group().replace(",","").strip()
-          if re.fullmatch(rf"(?:{variants})",res): ### Если отловил только ул или пр-д то проверяем наоборот например Лихачёва пр-т
-            reversed_pattern = fr"(?:,|\s)([^,\.]*)(?:{variants})(?:[\.\s]*)(?:,|\s)"
-            reversed_res = re.search(reversed_pattern, address)
-            if reversed_res:
-              return reversed_res.group().replace(",","").strip()
-            return None
+            res = res.group().replace(",","").strip()
+            if re.fullmatch(rf"(?:{variants})",res): ### Если отловил только ул или пр-д то проверяем наоборот например Лихачёва пр-т
+                reversed_pattern = fr"(?:,|\s)([^,\.]*)(?:{variants})(?:[\.\s]*)(?:,|\s)"
+                reversed_res = re.search(reversed_pattern, address)
+                if reversed_res:
+                    return reversed_res.group().replace(",","").strip()
+                return None
 
-          return res
+            return res
         return None
 
     @classmethod
@@ -96,23 +96,21 @@ class Regex:
         variants = cls._variants(cls.street_types)
         pattern = fr"(?:,|\s)(?:{variants})(?:[\.\s]*)([^,\.]*)(?:,|\s)"
         res = re.search(pattern,address)
-
         if res:
-          res = res.group().replace(",","").strip()
-          if re.fullmatch(rf"(?:{variants})",res): ### Если отловил только ул или пр-д то проверяем наоборот например Лихачёва пр-т
-            reversed_pattern = fr"(?:,|\s)([^,\.]*)(?:{variants})(?:[\.\s]*)(?:,|\s)"
-            reversed_res = re.search(reversed_pattern, address)
-            if reversed_res: # Если он есть
-              reversed_res = reversed_res.group().replace(",","").strip()
-              if re.fullmatch(rf"(?:{variants})",reversed_res): # если он не нашёл ничего кроме пр-т даже так то -> None
+            res = res.group().replace(",","").strip()
+            if re.fullmatch(rf"(?:{variants})",res.replace(".","").strip()): ### Если отловил только ул или пр-д то проверяем наоборот например Лихачёва пр-т
+                reversed_pattern = fr"(?:,|\s)([^,\.]*)(?:{variants})(?:[\.\s]*)(?:,|\s)"
+                reversed_res = re.search(reversed_pattern, address)
+                if reversed_res: # Если он есть
+                    reversed_res = reversed_res.group().replace(",","").strip()
+                    if re.fullmatch(rf"(?:{variants})",reversed_res): # если он не нашёл ничего кроме пр-т даже так то -> None
+                        return None
+                    return reversed_res
                 return None
-              return reversed_res
-            return None
 
-          return res
+            return res
         return None
 
     @classmethod
     def _variants(cls, types : List[str]) -> str:
         return "|".join(types)
-
