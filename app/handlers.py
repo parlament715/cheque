@@ -275,7 +275,7 @@ async def button(call : CallbackQuery, state : FSMContext):
 @router.message(StateFilter("edit await"))
 async def edit_await(message : Message,state : FSMContext):
     state_data = await state.get_data()
-    logger.info(f"{message.from_user.username} отредоктировал {state_data["edit"]} на {message.text} у карточки с id:{state_data["id"]}")
+    logger.info(f"{message.from_user.username} отредактировал {state_data["edit"]} на {message.text} у карточки с id:{state_data["id"]}")
     with rq:
         if message.text != "Отмена ❌":
             rq.write_update("cards",[(state_data["edit"],message.text)],f'id = {state_data["id"]}')
