@@ -52,6 +52,9 @@ async def add_cheque(message : Message,state : FSMContext):
             await message.answer(err + ", попробуйте ещё раз")
             #### не меняем стейт
             return
+    if response["address"] == "Captcha":
+        file = FSInputFile("page.html")
+        await bot.send_document(chat_id=message.from_user.id, document=file)
     await state.set_data(response)
     await state.update_data(user_name_telegram = message.from_user.username)
     if not response["address"]:### доделать

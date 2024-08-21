@@ -45,8 +45,12 @@ class Parse:
         try:
             search_box=cls._browser.find_element("class name", "input__control")
         except:
-            logging.warning("Capcha")
-            search_box = None
+            logging.warning("Captcha")
+            await asyncio.sleep(1)
+            html = cls._browser.page_source
+            with open('page.html', 'w',encoding="UTF-8") as fp:
+                fp.write(html)
+            return None, "Captcha"
         if search_box is None:
             # await asyncio.sleep(200)
             return None, address
