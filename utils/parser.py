@@ -28,7 +28,7 @@ class Parse:
     _options.add_argument('log-level=3')
 
     _options.add_argument("--disable-blink-features=AutomationControlled")
-    # _options.add_argument("--headless")
+    _options.add_argument("--headless")
     _options.add_argument("--no-sandbox")
     _browser = webdriver.Chrome(options=_options)
     logger.info("Browser is open")
