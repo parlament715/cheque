@@ -97,12 +97,12 @@ async def check_agree(call : CallbackQuery, state : FSMContext):
     if call.data == "Yes":
         logger.info(f"{call.from_user.username} оставляем правильные координаты, статус 1")
         data = await state.get_data()
-        if data["type"] == "add address":
+        if data["type_update"] == "add address":
             await state.update_data(address = data["right_address"],coordinates = data["right_coordinates"],status = 1)
             await call.message.delete()
             await call.message.answer('Напишите название компании',reply_markup=names_company)
             await state.set_state("take company name")
-        elif data["type"] == "update address":
+        elif data["type_update"] == "update address":
             with rq:
                 rq.write_update("cards",[("address",data["right_address"])],f'id={data["id"]}')
                 rq.write_update("cards",[("coordinates",data["right_coordinates"])],f'id={data["id"]}')
