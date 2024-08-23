@@ -2,8 +2,9 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import CommandStart, StateFilter,Command
 from aiogram import F,Router
 from aiogram.fsm.context import FSMContext
-from loader import bot, rq , chk, excl
+from loader import bot, rq , chk
 from config import today, ADMIN
+from utils.excel import Excel_db
 from icecream import ic
 from app.keyboard import (keyboard_Inline, keyboard_Markup, keyboard_YesNo, keyboard_right,
 create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company, keyboard_try_again)
@@ -320,14 +321,12 @@ async def send_excel_tb(message : Message):
     logger.info(f"{message.from_user.username} хочет получить таблицу excel")
     if str(message.from_user.id) in ADMIN:
         with rq:
-            res = rq.select_many("cards",["user_name_telegram","company_name","date_time","address","cheque_number","FD","shift_number","comment"])
-        with excl:
             try:
-                excl.create_xl(res=res)
+                Excel_db.create_xl(rq.conn)
             except Exception as ex:
                 ic(ex)
                 await message.answer("Ошибка, попробуйте ещё раз")
                 return
-        file = FSInputFile(excl.file_name)
+        file = FSInputFile(Excel_db.file_name)
         await bot.send_document(chat_id=message.from_user.id,document=file)
         logger.info(f"{message.from_user.username} получил таблицу excel")
