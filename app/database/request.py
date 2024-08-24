@@ -109,6 +109,7 @@ class Request():
         if where == None:
             self.cursor.execute(f'''UPDATE {table_name} SET {all_string[:-2]}''')
         else:### переделать не работает больше одного параметра за раз
+            ic(f'''UPDATE {table_name} SET {all_string[:-2]} WHERE {where}''')
             self.cursor.execute(f'''UPDATE {table_name} SET {all_string[:-2]} WHERE {where}''')
         self.conn.commit()
     

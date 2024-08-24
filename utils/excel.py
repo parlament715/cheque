@@ -42,15 +42,21 @@ class Excel_read():
         new_df = df[df['status'] == 3] ### создаем новый dataframe where status == 3 
         index_list = new_df.index.tolist() ### получаем список индексов
         for id in index_list:
+            with rq:
+              database_address = rq.select_one("cards",["address"],f"id = {id}")[0]
             address = new_df.loc[id,'address']
-            coordinates, address = await Parse.parse_coordinates_and_address(address)
+            company_name = new_df.loc[id,'company_name']
+            comment = new_df.loc[id,'comment']
+            coordinates = new_df.loc[id,'coordinates']
+            if database_address != address:
+                coordinates, address = await Parse.parse_coordinates_and_address(address)
             if coordinates is None:
                 coordinates = "---"
                 status = 2
             else:
                 status = 1
             with rq:
-                rq.write_update("cards",[("coordinates",coordinates),("status",status),("address",address)],f'id = {id}')
+                rq.write_update("cards",[("company_name",company_name),("address",address),("comment",comment),("status",status),("coordinates",coordinates)],f'id = {id}')
               
 
 
