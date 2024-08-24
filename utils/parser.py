@@ -26,12 +26,13 @@ class Parse:
             return None, None
         address = Regex.format_address(address)
         html = requests.get(f'https://yandex.ru/maps?text={address}').text
+        logger.info("Произвожу запрос к yandex.ru")
         soup = BeautifulSoup(html,"html.parser")
         organizations = None
         try:
             organizations = soup.find("div",class_ = "tabs-select-view__title _name_inside")
         except:
-            ic("Не нашлось организаций")
+            logger.warning("Не нашлось организаций : " + address)
             return None, address
         if organizations:
             right_address = soup.find("div",class_ = "toponym-card-title-view__description")
@@ -42,6 +43,7 @@ class Parse:
             else:
                 logger.warning("Error : " + address)
                 return None, address
+        logger.warning("Не нашлось организаций : " + address)
         return None, address
 
 

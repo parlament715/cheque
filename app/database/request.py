@@ -100,15 +100,15 @@ class Request():
     def write_update(self,table_name : str, columns_and_values : List[Tuple[str,Any]], where : str = None) -> None:
         columns = ""
         values = ""
+        all_string = ""
         for column,value in columns_and_values:
             column,value =str(column),str(value)
-            columns += column + ", "
             if type(value) == str:
                 value = '"' + value + '"'
-            values += value + ", "
+            all_string += f'{column} = {value}, '
         if where == None:
-            self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") = ({values[:-2]})''')
+            self.cursor.execute(f'''UPDATE {table_name} SET {all_string[:-2]}''')
         else:### переделать не работает больше одного параметра за раз
-            self.cursor.execute(f'''UPDATE {table_name} SET ("{columns[:-2]}") = ({values[:-2]}) WHERE {where}''')
+            self.cursor.execute(f'''UPDATE {table_name} SET {all_string[:-2]} WHERE {where}''')
         self.conn.commit()
     

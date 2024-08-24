@@ -9,3 +9,4 @@ myvenv
 *.exe
 *.log
 migrate_db.py
+load.html

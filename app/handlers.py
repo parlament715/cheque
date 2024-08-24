@@ -4,10 +4,10 @@ from aiogram import F,Router
 from aiogram.fsm.context import FSMContext
 from loader import bot, rq , chk
 from config import today, ADMIN
-from utils.excel import Excel_db
+from utils.excel import Excel_db, Excel_read
 from icecream import ic
 from app.keyboard import (keyboard_Inline, keyboard_Markup, keyboard_YesNo, keyboard_right,
-create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company, keyboard_try_again)
+create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company, keyboard_try_again, keyboard_load)
 from random import randint
 from aiogram.enums.parse_mode import ParseMode
 from utils import card_template
@@ -28,6 +28,32 @@ logger.setLevel(logging.INFO)
 async def start_reaction(message: Message, state : FSMContext):
     logger.info(f"{message.from_user.username} нажал кнопку старт")
     await message.answer("Привет! Меня зовут drnkt-bot. Я здесь, чтобы ты присылал мне чеки из приложения «Проверка чеков ФНС»: После сканирования, жми «Действия с чеком - поделиться - формат html - отправить через telegram - drnkt_bot. Не забудь проверить, верный ли адрес торговой точки в чеке!")
+
+@router.message(F.content_type.in_(["document"]),StateFilter("load await"))
+async def await_load(message : Message, state : FSMContext):
+    await bot.send_chat_action(message.from_user.id, action="find_location")
+    try :
+        file_id = message.document.file_id
+        file_name = message.document.file_name
+    except:
+        logger.error(f"Не удалось загрузить {message.from_user.username}")
+        await message.answer("Файл не загружен, попробуйте ещё")
+        ### не меняем сиейт
+        return
+    if file_name:
+        if file_name.split(".")[-1] == "xlsx":
+            file_name = "load.xlsx"
+            file = await bot.get_file(file_id)
+            # Укажите папку дл
+            await bot.download_file(file.file_path,file_name)
+            logger.info(f"{message.from_user.username} загрузил таблицу excel")
+            await Excel_read.read(file_name)
+            logger.info(f"{message.from_user.username} excel таблица прочитана")
+            await message.answer("Таблица загружена ✅")
+            await state.clear()
+    else:
+        await message.answer("Файл не загружен, попробуйте ещё")
+        logger.error(f"Не удалось загрузить {message.from_user.username}")
 
 @router.message(F.content_type.in_(["document"]))
 # @router.message()
@@ -317,9 +343,18 @@ async def list_my_cards(message : Message, state : FSMContext):
 
 
 @router.message(Command("admin"))
-async def send_excel_tb(message : Message):
-    logger.info(f"{message.from_user.username} хочет получить таблицу excel")
+async def send_excel_tb(message : Message, state : FSMContext):
     if str(message.from_user.id) in ADMIN:
+        logger.info(f"{message.from_user.username} спрашиваем скачать или загрузить таблицу")
+        await message.answer("Выберете действие",reply_markup=keyboard_load)
+        await state.set_state("load")
+
+@router.callback_query(StateFilter("load"))
+async def load(call : CallbackQuery, state : FSMContext):
+    message = call.message
+    ic(call.data)
+    if call.data == "Download":
+        logger.info(f"{message.from_user.username} хочет получить таблицу excel")
         with rq:
             try:
                 Excel_db.create_xl(rq.conn)
@@ -328,5 +363,14 @@ async def send_excel_tb(message : Message):
                 await message.answer("Ошибка, попробуйте ещё раз")
                 return
         file = FSInputFile(Excel_db.file_name)
-        await bot.send_document(chat_id=message.from_user.id,document=file)
+        await bot.send_document(chat_id=message.chat.id,document=file)
         logger.info(f"{message.from_user.username} получил таблицу excel")
+        await call.answer()
+        await state.clear()
+        return
+    elif call.data == "Load":
+        logger.info(f"{message.from_user.username} хочет загрузить таблицу")
+        await message.answer("Отправьте таблицу excel")
+        await state.set_state("load await")
+        await call.answer()
+    

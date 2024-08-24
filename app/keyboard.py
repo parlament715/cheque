@@ -47,9 +47,11 @@ keyboard_right = InlKB(inline_keyboard=[
   [InKButton(text = "Всё правильно✅", callback_data="Yes"),InKButton(text="Отмена❌",callback_data="No")]
 ]
 )
-
+keyboard_load = InlKB(inline_keyboard=[
+  [InKButton(text = "Скачать таблицу ⬇️", callback_data="Download"),InKButton(text="Загрузить таблицу в бота ⬆️",callback_data="Load")]
+])
 keyboard_Markup = ReplyKeyboardMarkup(resize_keyboard=True,keyboard=[[KButton(text = "KB1")],
-                                                               [KButton(text = "KB2")]])
+                                                              [KButton(text = "KB2")]])
 
 keyboard_Inline =InlKB(inline_keyboard=[[InKButton(text = "kb",callback_data="kb")]])
 
