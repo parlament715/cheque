@@ -48,8 +48,8 @@ keyboard_right = InlKB(inline_keyboard=[
 ]
 )
 keyboard_load = InlKB(inline_keyboard=[
-  [InKButton(text = "Скачать таблицу ⬇️", callback_data="Download"),InKButton(text="Загрузить таблицу в бота ⬆️",callback_data="Load")]
-])
+  [InKButton(text = "Скачать таблицу ⬇️", callback_data="Download")],[InKButton(text="Загрузить таблицу в бота ⬆️",callback_data="Load")],
+  [InKButton(text = "Скачать для Яндекса ⬇️", callback_data="Yandex")]])
 keyboard_Markup = ReplyKeyboardMarkup(resize_keyboard=True,keyboard=[[KButton(text = "KB1")],
                                                               [KButton(text = "KB2")]])
 

@@ -12,6 +12,7 @@ from random import randint
 from aiogram.enums.parse_mode import ParseMode
 from utils import card_template
 from utils.parser import Parse
+from utils.yandex import Сonstructor
 import logging
 router = Router()
 
@@ -347,9 +348,9 @@ async def send_excel_tb(message : Message, state : FSMContext):
     if str(message.from_user.id) in ADMIN:
         logger.info(f"{message.from_user.username} спрашиваем скачать или загрузить таблицу")
         await message.answer("Выберете действие",reply_markup=keyboard_load)
-        await state.set_state("load")
+        await state.set_state("admin")
 
-@router.callback_query(StateFilter("load"))
+@router.callback_query(StateFilter("admin"))
 async def load(call : CallbackQuery, state : FSMContext):
     message = call.message
     ic(call.data)
@@ -373,4 +374,11 @@ async def load(call : CallbackQuery, state : FSMContext):
         await message.answer("Отправьте таблицу excel")
         await state.set_state("load await")
         await call.answer()
-    
+    elif call.data == "Yandex":
+        logger.info(f"{message.from_user.username} хочет получить Yandex")
+        with rq:
+            await Сonstructor.get_excel(rq.conn)
+        file = FSInputFile(Сonstructor.file_name)
+        await bot.send_document(chat_id=message.chat.id,document=file)
+        await call.answer()
+        await state.clear()
