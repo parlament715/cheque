@@ -34,9 +34,9 @@ class Сonstructor:
         latest_checks["FD/shift"] = (latest_checks["FD"] / latest_checks["shift_number"]).round()
         yandex_df[['Широта', 'Долгота']] = latest_checks['coordinates'].str.split(' ', expand=True)
         yandex_df["Широта"] = yandex_df["Широта"].astype(str).str.replace(",","")
-        yandex_df["Описание"] = "FD/shift = " + latest_checks["FD/shift"].astype(str) + r"                " + "comment = " + latest_checks["comment"].astype(str)
+        yandex_df["Описание"] = "comment = " + latest_checks["comment"].astype(str)
         yandex_df["Подпись"] = latest_checks["company_name"]
-        yandex_df["Номер метки"] = range(len(yandex_df))
+        yandex_df["Номер метки"] = latest_checks["FD/shift"]
         yandex_df = yandex_df[["Широта", "Долгота", "Описание", "Подпись", "Номер метки"]]
         yandex_df.to_excel(cls.file_name,index = False)
 
