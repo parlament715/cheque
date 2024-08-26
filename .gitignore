@@ -10,3 +10,4 @@ myvenv
 *.log
 migrate_db.py
 load.html
+pass.py
