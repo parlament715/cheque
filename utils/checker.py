@@ -26,6 +26,7 @@ class Checker:
               coordinates, address = await Parse.parse_coordinates_and_address(address)
             data["address"] = address
             data["coordinates"] = coordinates
+            data["date_time"] = self._date_time_format(data["date_time"])
             return data
 
         else:
@@ -76,3 +77,10 @@ class Checker:
         data["shift_number"] = str(td.text).replace(" №","").split(splitter)[1].strip()
     return data
 
+  def _date_time_format(self,date_time : str) -> str:
+    date = date_time.split()[0]
+    time = date_time.split()[-1]
+    if len(date.split(".")[-1]) == 2:
+      date = date.split(".")[0] + "." + date.split(".")[1] + "." + "20" +date.split(".")[2]
+    time = time.replace(".",":")
+    return date + " " + time

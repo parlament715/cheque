@@ -41,7 +41,7 @@ class Сonstructor:
         yandex_df["Широта"] = yandex_df["Широта"].astype(float) + yandex_df["random"]
         yandex_df["random"] = np.random.uniform(low=-9/100000, high=9/100000, size=len(yandex_df))
         yandex_df["Долгота"] = yandex_df["Долгота"].astype(float) + yandex_df["random"]
-        yandex_df["Описание"] = "comment = " + latest_checks["comment"].astype(str)
+        yandex_df["Описание"] = "Адрес = " + latest_checks["address"].astype(str) + "    " + "дата и время = " + latest_checks["date_time"].astype(str) + "    "+"комментарий = " + latest_checks["comment"].astype(str) 
         yandex_df["Подпись"] = latest_checks["company_name"]
         yandex_df["Номер метки"] = latest_checks["FD/shift"]
         yandex_df = yandex_df[["Широта", "Долгота", "Описание", "Подпись", "Номер метки"]]
