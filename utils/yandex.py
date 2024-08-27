@@ -1,4 +1,7 @@
 import pandas as pd
+import random
+import asyncio
+import numpy as np
 class Сonstructor:
     file_name = "constructor.xlsx"
     @classmethod
@@ -34,6 +37,10 @@ class Сonstructor:
         latest_checks["FD/shift"] = (latest_checks["FD"] / latest_checks["shift_number"]).round()
         yandex_df[['Широта', 'Долгота']] = latest_checks['coordinates'].str.split(' ', expand=True)
         yandex_df["Широта"] = yandex_df["Широта"].astype(str).str.replace(",","")
+        yandex_df["random"] = np.random.uniform(low=-9/100000, high=9/100000, size=len(yandex_df))
+        yandex_df["Широта"] = yandex_df["Широта"].astype(float) + yandex_df["random"]
+        yandex_df["random"] = np.random.uniform(low=-9/100000, high=9/100000, size=len(yandex_df))
+        yandex_df["Долгота"] = yandex_df["Долгота"].astype(float) + yandex_df["random"]
         yandex_df["Описание"] = "comment = " + latest_checks["comment"].astype(str)
         yandex_df["Подпись"] = latest_checks["company_name"]
         yandex_df["Номер метки"] = latest_checks["FD/shift"]
@@ -44,4 +51,5 @@ class Сonstructor:
 if __name__ == "__main__":
     import sqlite3
     cnx = sqlite3.connect("request.db")
-    Сonstructor.get_excel(cnx)
+    asyncio.run(Сonstructor.get_excel(cnx))
+    # Сonstructor.get_excel(cnx)

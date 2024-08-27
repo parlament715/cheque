@@ -39,11 +39,17 @@ class Excel_read():
     async def read(cls,file_name):
         df = pd.read_excel(file_name,index_col=1,skiprows=1,skipfooter=1) 
         # df = df[["status","id_telegram"]]
+        status_del_df = df[df['status'] == 4] ### создаем новый dataframe where status == 4
+        index_list_del = status_del_df.index.tolist() ### получаем список индексов
+        with rq as cursor:
+            for id in index_list_del:
+                ic(id)
+                cursor.execute(f"DELETE FROM cards WHERE id = {id}")
         new_df = df[df['status'] == 3] ### создаем новый dataframe where status == 3 
         index_list = new_df.index.tolist() ### получаем список индексов
         for id in index_list:
             with rq:
-              database_address = rq.select_one("cards",["address"],f"id = {id}")[0]
+                database_address = rq.select_one("cards",["address"],f"id = {id}")[0]
             address = new_df.loc[id,'address']
             company_name = new_df.loc[id,'company_name']
             comment = new_df.loc[id,'comment']
@@ -57,7 +63,7 @@ class Excel_read():
                 status = 1
             with rq:
                 rq.write_update("cards",[("company_name",company_name),("address",address),("comment",comment),("status",status),("coordinates",coordinates)],f'id = {id}')
-              
+        
 
 
 

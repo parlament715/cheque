@@ -35,6 +35,7 @@ class Request():
         return self.cursor
     
     def __exit__(self,exc_type,exc_val,exc_tb):
+        self.conn.commit()
         self.conn.close()
 
     def select_one(self, table : str, columns : List[str], where : str = None) -> Tuple:
@@ -95,7 +96,6 @@ class Request():
                 value = '"' + value + '"'
             values += value + ", "
         self.cursor.execute(f'''INSERT INTO {table_name} ({columns[:-2]}) VALUES ({values[:-2]})''')
-        self.conn.commit()
         
     def write_update(self,table_name : str, columns_and_values : List[Tuple[str,Any]], where : str = None) -> None:
         columns = ""
@@ -110,5 +110,4 @@ class Request():
             self.cursor.execute(f'''UPDATE {table_name} SET {all_string[:-2]}''')
         else:### переделать не работает больше одного параметра за раз
             self.cursor.execute(f'''UPDATE {table_name} SET {all_string[:-2]} WHERE {where}''')
-        self.conn.commit()
     
