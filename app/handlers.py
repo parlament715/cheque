@@ -7,7 +7,7 @@ from config import today, ADMIN
 from utils.excel import Excel_db, Excel_read
 from icecream import ic
 from app.keyboard import (keyboard_Inline, keyboard_Markup, keyboard_YesNo, keyboard_right,
-create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company, keyboard_try_again, keyboard_load)
+create_keyboard_select, keyboard_back, create_keyboard_edit, cancel, names_company, keyboard_try_again, keyboard_load, create_reply_kb)
 from random import randint
 from aiogram.enums.parse_mode import ParseMode
 from utils import card_template
@@ -98,7 +98,16 @@ async def add_cheque(message : Message,state : FSMContext):
         ic("status 1")
         await state.update_data(status = 1)
     
-    await message.answer("Напишите название компании",reply_markup=names_company)
+    with rq as cursor:
+                tmp_company_names = cursor.execute("""SELECT company_name, COUNT(*) AS count
+                    FROM "cards"
+                    GROUP BY company_name
+                    ORDER BY count DESC
+                    LIMIT 8;""").fetchall()
+    company_names = []
+    for company_name,v in tmp_company_names:
+        company_names.append(company_name)
+    await message.answer('Напишите название компании',reply_markup=create_reply_kb(company_names,2))
     await state.set_state("take company name")
 
 
@@ -127,7 +136,16 @@ async def check_agree(call : CallbackQuery, state : FSMContext):
         if data["type_update"] == "add address":
             await state.update_data(address = data["right_address"],coordinates = data["right_coordinates"],status = 1)
             await call.message.delete()
-            await call.message.answer('Напишите название компании',reply_markup=names_company)
+            with rq as cursor:
+                tmp_company_names = cursor.execute("""SELECT company_name, COUNT(*) AS count
+                    FROM "cards"
+                    GROUP BY company_name
+                    ORDER BY count DESC
+                    LIMIT 8;""").fetchall()
+            company_names = []
+            for company_name,v in tmp_company_names:
+                company_names.append(company_name)
+            await call.message.answer('Напишите название компании',reply_markup=create_reply_kb(company_names,2))
             await state.set_state("take company name")
         elif data["type_update"] == "update address":
             with rq:
@@ -163,7 +181,16 @@ async def try_again_address(call : CallbackQuery, state : FSMContext):
             await state.update_data(address = data["incorrect_address"],coordinates = "---",status = 2)
             await call.message.delete()
             logger.info(f"{call.from_user.username} спрашиваем название компании")
-            await call.message.answer('Напишите название компании',reply_markup=names_company)
+            with rq as cursor:
+                tmp_company_names = cursor.execute("""SELECT company_name, COUNT(*) AS count
+                    FROM "cards"
+                    GROUP BY company_name
+                    ORDER BY count DESC
+                    LIMIT 8;""").fetchall()
+            company_names = []
+            for company_name,v in tmp_company_names:
+                company_names.append(company_name)
+            await call.message.answer('Напишите название компании',reply_markup=create_reply_kb(company_names,2))
             await state.set_state("take company name")
         elif data["type_update"] == "update address":
             with rq:

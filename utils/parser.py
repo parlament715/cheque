@@ -28,13 +28,13 @@ class Parse:
         html = requests.get(f'https://yandex.ru/maps?text={address}').text
         logger.info("Произвожу запрос к yandex.ru")
         soup = BeautifulSoup(html,"html.parser")
-        organizations = None
+        services = None
         try:
-            organizations = soup.find("div",class_ = "tabs-select-view__title _name_inside")
+            services = soup.find("div",class_ = "tabs-select-view__title _name_services")
         except:
             logger.warning("Не нашлось организаций : " + address)
             return None, address
-        if organizations:
+        if services:
             right_address = soup.find("div",class_ = "toponym-card-title-view__description")
             if right_address:
                 coordinates = soup.find("div",class_ = "toponym-card-title-view__coords-badge")

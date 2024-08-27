@@ -3,7 +3,7 @@ from typing import List
 from icecream import ic
 from aiogram.types import KeyboardButton as KButton
 from aiogram.types import InlineKeyboardMarkup as InlKB
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.types import InlineKeyboardButton as InKButton
 from loader import bot
 
@@ -24,6 +24,13 @@ def create_keyboard_select(all_list : List[tuple]) -> InlKB:
       builder.button(text=f"{element[i]}", callback_data=f"id {element[0]}" )
   builder.adjust(1)
   return builder.as_markup()
+
+def create_reply_kb(name_list : List[str], size : int) -> InlKB:
+  builder = ReplyKeyboardBuilder()
+  for index,elem in enumerate(name_list):
+    builder.button(text=elem)
+  builder.adjust(size)
+  return builder.as_markup(resize_keyboard=True,one_time_keyboard=True)
 
 cancel = ReplyKeyboardMarkup(resize_keyboard=True,keyboard=[[KButton(text = "Отмена ❌")]],one_time_keyboard=True)
 def create_keyboard_edit(id : str):
