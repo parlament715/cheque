@@ -25,16 +25,32 @@ class Parse:
         if address == None:
             return None, None
         address = Regex.format_address(address)
-        html = requests.get(f'https://yandex.ru/maps?text={address}').text
         logger.info("Произвожу запрос к yandex.ru")
+        response = requests.get(f'https://yandex.ru/maps?text={address}')
+        url = None
+        html = response.text
+        # with open("file.html", "w", encoding='utf-8') as file:
+        #     file.write(html)
         soup = BeautifulSoup(html,"html.parser")
         services = None
         try:
-            services = soup.find("div",class_ = "tabs-select-view__title _name_services")
+            a_obzor = soup.find("a",class_ = "tabs-select-view__label")
+            if a_obzor:
+                if a_obzor.text == "Обзор":
+                    logger.info("Нашёл house в обзоре")
+                    url = a_obzor["href"]
+                else:
+                    logger.warning("Не найдено обзора error 1: " + address, " a_obzor.text = ",a_obzor.text)
+                    return None, address
+            else:
+                logger.warning("Не найдено обзора error 2 возможно каптча: " + address)
+                return None, address
+            
         except:
-            logger.warning("Не нашлось организаций : " + address)
+            logger.warning("Не найдено обзора error 3: " + address)
             return None, address
-        if services:
+        ic(url)
+        if "house" in url:
             right_address = soup.find("div",class_ = "toponym-card-title-view__description")
             if right_address:
                 coordinates = soup.find("div",class_ = "toponym-card-title-view__coords-badge")
@@ -43,14 +59,14 @@ class Parse:
             else:
                 logger.warning("Error : " + address)
                 return None, address
-        logger.warning("Не нашлось организаций : " + address)
+        logger.warning("Не нашлось house in url : " + address)
         return None, address
 
 
 
 async def main():
     # while True:
-        ic(await Parse.parse_coordinates_and_address('- город Москва, вн.тер.г. Зюзино,117638, ул Одесская, д. 2'))
+        ic(await Parse.parse_coordinates_and_address('Варшавское шоссе, 170Ек5, Москва, 117405'))
 
 if __name__ == "__main__":
     from regex import Regex
