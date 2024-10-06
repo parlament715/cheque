@@ -11,3 +11,4 @@ myvenv
 migrate_db.py
 load.html
 pass.py
+venv
