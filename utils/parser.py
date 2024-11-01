@@ -1,6 +1,7 @@
 if __name__ != "__main__":
     from utils.regex import Regex
 import time
+from config import cookies
 from bs4 import BeautifulSoup
 from typing import Tuple
 import asyncio
@@ -20,13 +21,17 @@ logger.addHandler(handler)
 
 
 class Parse:
+    session = requests.Session()
+    for cookie in cookies:
+        session.cookies.set(**cookie)
+    header_cockie = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36"}
     @classmethod
     async def parse_coordinates_and_address(cls, address : str) -> Tuple[Tuple[str,str],str]:
         if address == None:
             return None, None
         address = Regex.format_address(address)
         logger.info("Произвожу запрос к yandex.ru")
-        response = requests.get(f'https://yandex.ru/maps?text={address}')
+        response = cls.session.get(f'https://yandex.ru/maps?text={address}',headers=cls.header_cockie)
         url = None
         html = response.text
         # with open("file.html", "w", encoding='utf-8') as file:

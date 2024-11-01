@@ -12,3 +12,4 @@ migrate_db.py
 load.html
 pass.py
 venv
+cookies.json
