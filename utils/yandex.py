@@ -62,7 +62,6 @@ class Сonstructor:
         yandex_df = yandex_df[["Широта", "Долгота",
                                "Описание", "Подпись", "Номер метки"]]
         yandex_df.to_excel(cls.file_name, index=False)
-        await cls.not_bold_title()
 
 
 if __name__ == "__main__":
